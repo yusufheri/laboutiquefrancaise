@@ -1,0 +1,46 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes commandes - {% endblock %}
+
+{% block content %}
+
+<h1>Mes commandes</h1>
+
+
+Bienvenue <b>{{ app.user.firstname ~' '~ app.user.lastname }}</b> dans votre compte. C'est dans cet espace que vous allez visualiser l'historique de toutes vos commandes. <br>
+<a href="{{ path('account') }}" class="nounderline"> Retour</a>
+<hr>
+
+{% if orders|length == 0 %}
+    <p class="text-center text-bold">
+        Vous n avez pas encore passé la commande dans notre plateforme La Boutique Française. 
+    </p>
+{% else %}
+    <div class="row">
+        <table class="table mt-4">
+            <thead>
+                <th scope="col">Reference</th>
+                <th scope="col">Passée le</th>
+                <th scope="col">Produit (s)</th>
+                <th scope="col">Total</th>
+                <th scope="col"></th>
+            </thead>
+            <tbody>
+                {% for order in orders %}                   
+                    <tr>
+                            <td><span class="badge badge-secondary"> {{ order.reference }}</span></td>
+                            <td>{{ order.createdAt|date('d/m/Y h:m') }}</td>
+                            <td class="text-center">{{ order.orderDetails|length }}</td>
+                            <td>{{ ((order.carrierPrice + order.total) / 100) | number_format(2,',','.') }} €</td>
+                            <td class="text-right"><a href="{{ path('account_order_show',{reference : order.reference}) }}" class="nounderline"><i class="fa fa-eye" aria-hidden="true"></i> voir ma commande</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>  
+            
+    </div>   
+{% endif %}
+<br><br><br>
+
+{% endblock %}
+

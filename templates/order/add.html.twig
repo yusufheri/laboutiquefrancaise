@@ -1,0 +1,98 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Paiement de ma commande - {% endblock %}
+
+{% block javascripts %}
+    <script src="https://polyfill.io/v3/polyfill.min.js?version=3.52.1&features=fetch"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+{% endblock %}
+
+{% block content %}
+<h1>Mon récapitilatif</h1>
+<p>Vérifier vos informations avant de payer votre commande.</p>
+<hr>
+<div class="row">
+    <div class="col-md-6">
+        <strong>Mon adresse de livraison</strong><br>
+        <div class="form-check">
+            {{ delivery|raw }}
+        </div>
+        <hr>
+        <strong>Mon transporteur</strong> <br>
+        <div class="form-check">
+            {{ carrier.name }} <br>
+            {{ carrier.description }} <br>
+            {{ (carrier.price / 100) | number_format(2,',','.') }} €
+        </div>
+        
+    </div>
+    <div class="col-md-6">        
+        <div class="order-summary">
+        {% set total = null %}
+            {% for key, cart in carts %}
+                {% set product = cart.product %}
+                <div class="row {% if  key > 0 %} mt-2 {% endif %}">
+                    <div class="col-md-2"><img src="/uploads/{{ product.illustration }}" alt="{{ product.subTitle }}" class="cart-picture"></div>
+                    <div class="col-md-7 my-auto">
+                        <a style="text-decoration:none;" href="{{ path('detail_product', {slug:product.slug}) }}">{{ product.name }}</a> <br>
+                        <small>
+                            {{ product.subTitle }} 
+                            <br>
+                            x {{ cart.quantity }}
+                        </small>
+                    </div>
+                    <div class="col-md-3 my-auto">
+                        <span class="badge badge-pill badge-info text-bold">
+                            {{ ((cart.quantity * product.price) / 100) | number_format(2, ',','.')}} €                        
+                        </span>
+                    </div>
+                </div>
+                {% set total = total + ((cart.quantity * product.price) / 100) %}
+            {% endfor %}
+        </div>
+        
+        <hr>
+        <strong>Sous-total : </strong> {{total | number_format(2, ',','.')}} €<br>
+        <strong>Livraison : </strong> {{ (carrier.price / 100) }} €
+        <hr>
+        <strong>Total : </strong> {{ (total + (carrier.price / 100))  | number_format(2, ',','.')}} €
+        <button class="btn btn-success btn-block mt-3 " id="checkout-button">
+            <b> Payer | {{ (total + (carrier.price / 100))  | number_format(2, ',','.')}} €</b>
+        </button>       
+    </div>
+</div><br><br><br>
+{% endblock %}
+
+{% block script %}
+    <script type="text/javascript">
+    // Create an instance of the Stripe object with your publishable API key
+    var stripe = Stripe("pk_test_E6yBcWTyZSAQt8D71hCJ0rQd");
+    var checkoutButton = document.getElementById("checkout-button");
+    checkoutButton.addEventListener("click", function () {
+        fetch("/commande/create-checkout-session/{{ reference }}", {
+            method: "POST",
+        })
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (session) {
+            if (session.error == 'order') {
+                window.location.replace('{{ path('order') }}')
+            } else {
+                return stripe.redirectToCheckout({ sessionId: session.id });
+            }
+        })
+        .then(function (result) {
+          // If redirectToCheckout fails due to a browser or network
+          // error, you should display the localized error message to your
+          // customer using error.message.
+          if (result.error) {
+            alert(result.error.message);
+          }
+        })
+        .catch(function (error) {
+          console.error("Error:", error);
+        });
+    });
+  </script>
+{% endblock %}

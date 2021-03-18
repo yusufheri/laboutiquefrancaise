@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nos produits - {% endblock %}
+
+{% block content %}
+
+<div class="row product-container">
+    <div class="col-md-3">
+        <h3>Filtrer</h3>
+        {{ form_start(form) }}
+        {{ form_widget(form) }}
+        {{ form_end(form) }}
+    </div>
+    <div class="col-md-9">        
+        <h3 >Notre catalogue</h3>
+
+        <div class="row ">
+            {% for product in products %}
+                <div class="col-md-4">
+                    <div class="product-item text-center">
+                        <a href="{{ path('detail_product', {slug: product.slug}) }}">
+                            <img src="/uploads/{{ product.illustration }}" alt="{{ product.name }}" class="img-fluid">
+                        </a>
+                        <h5>{{ product.name }}</h5>
+                        <span class="product-subtitle">{{ product.subTitle }}</span>
+                        <span class="product-price">{{ (product.price / 100) | number_format(2, ',', '.') }} £</span>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+<br><br><br><br>
+{% endblock %}

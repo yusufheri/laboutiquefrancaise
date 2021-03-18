@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inscription{% endblock %}
+
+{% block content %}
+    <h1>Inscription de nouveau compte</h1>
+        
+    <div class="alert alert-light">
+        {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <div class="alert alert-success">
+            <h1>Sauvegarde des informations</h1>
+            <button type="submit" class="btn btn-outline btn-primary"><i class="fa fa-check"></i> Sauvegarder les informations</button>
+        </div>
+        {{ form_end(form) }}    
+    </div>
+{% endblock %}

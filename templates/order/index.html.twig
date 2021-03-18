@@ -1,0 +1,40 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Valider ma commande - {% endblock %}
+
+{% block content %}
+<h1>Je passe ma commande</h1>
+<p>Chossissez vos préferences avant de passer votre commande sur La Boutique Française.</p>
+<hr>
+<div class="row">
+    <div class="col-md-6">
+        {% set formHtml %}
+            {{ form_start(form, {action: path('order_recap')}) }}
+                {{ form_label(form.addresses, 'Choississez votre adresse de livraison') }}
+                <a href="{{ path('account_address', {modal : true}) }}">Ajouter une nouvelle adresse</a>
+            {{ form_end(form) }}
+        {% endset %}
+
+        {{ formHtml|replace({'[br]' : '<br/>', '[b]' : '<b>', '[b2]' : '</b>'})|raw }}
+    </div>
+    <div class="col-md-6">
+        <div class="text-center">
+            <b>Recap de votre commande</b><br>
+            <p>Retrouvez le récapitulatif de vos produits</p>
+        </div>
+        <div class="order-summary">
+            {% for key, cart in carts %}
+                {% set product = cart.product %}
+                <div class="row {% if  key > 0 %} mt-2 {% endif %}">
+                    <div class="col-md-2"><img src="/uploads/{{ product.illustration }}" alt="{{ product.subTitle }}" class="cart-picture"></div>
+                    <div class="col-md-8 my-auto"><a style="text-decoration:none;" href="{{ path('detail_product', {slug:product.slug}) }}">{{ product.name }}</a> <br> <small>{{ product.subTitle }}</small></div>
+                    <div class="col-md-2 my-auto">x {{ cart.quantity }}</div>
+                </div>
+            {% endfor %}
+        </div>
+        
+
+       
+    </div>
+</div><br><br><br><br>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mon panier - {% endblock %}
+
+{% block content %}
+    <div style="margin-bottom: 150px;">
+        <h1>Mon panier <i class="fa fa-cart" aria-hidden="true"></i></h1>
+        Retrouvez l'ensemble des produits que vous avez ajouté à votre panier
+        {% if carts|length > 0 %}
+            <table class="table table-stripped mt-3">
+                <thead>
+                    <tr>
+                        
+                        <th width="10%">Illustration</th>
+                        <th width="40%">Produit</th>
+                        <th class="text-center" width="25%">Quantité</th>
+                        <th class="text-right" width="10%">Prix</th>
+                        <th class="text-right" width="10%">Total</th>
+                        <th width="5%"></th>
+                    </tr>
+                </thead>
+                {% set quantity = 0 %}
+                {% set total = 0 %}
+                <tbody>
+                    {% set i = 0 %}
+                    {% for cart in carts %}
+                        {% set product = cart.product %}
+                        {% set i = i + 1 %}
+                        {% set quantity = quantity + cart.quantity %}
+                        {% set price_total = (cart.quantity * product.price) / 100 %}
+                        {% set total = total  + price_total %}
+                        <tr>
+                            <td>
+                                <a href="{{ path('detail_product', {slug:product.slug}) }}">
+                                    <img src="/uploads/{{ product.illustration }}" alt="{{ product.subTitle }}" class="cart-picture">
+                                </a>
+                            </td>
+                            <td><a style="text-decoration:none;" href="{{ path('detail_product', {slug:product.slug}) }}">{{ product.name }}</a> <br> <small>{{ product.subTitle }}</small></td>
+                            <td class="text-center"> 
+                                <button class="btn btn-outline-warning btn_decrease" data-id="{{ product.id }}"><i class="fa fa-minus" aria-hidden="true"></i></button>
+                                 &nbsp; <span id="qte_{{product.id}}">{{ cart.quantity }}</span>&nbsp;
+                                 <button class="btn btn-outline-primary btn_increase" data-id="{{ product.id }}"><i class="fa fa-plus" aria-hidden="true"></i></button>
+                            </td>
+                            <td class="text-right"><span class="number" id="price_unit_{{ product.id }}"> {{ (product.price / 100) }}</span>  €</td>
+                            <td class="text-right"> <span class="number" id="price_total_{{product.id}}">{{ price_total| replace({',' : '.'}) }}</span> €</td>
+                            <td class="text-center">
+                                <button class="btn btn-outline-danger btn_delete_to_cart" data-id="{{ product.id }}" ><i class="fa fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table> 
+            <hr>
+            <div class="row text-right mb-5 mt-3">
+                <div class="col-md">
+                    <h3>Nombre de produit : <b><span class="number" id="count_product">{{quantity}}</span></b><h3>
+                    <h3>Total de mon panier :<b> <span class="number" id ="total_cart">{{ total }}</span>€ </b></h3><br>
+                    <a href="{{ path('order') }}" class="btn btn-success btn-block">Valider mon panier</a>
+                </div>                
+            </div>  
+        {% else %}
+            <hr>
+            <center> {#PrestaImageBundle#}
+                <a class="nounderline" href="{{ path('products') }}">
+                    <img src="{{ asset('img/empty.png') }}" alt="" width="250px">  
+                </a> 
+                <p>
+                    <b>Votre panier est vide. <a class="nounderline" href="{{ path('products') }}">Voir nos produits</a></b>
+                </p>           
+            </center>
+        {% endif %} 
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="{{ asset('/assets/js/jquery.number.min.js') }}"></script>
+    <script>
+        $(document).ready(function(){
+            $('span.number').number(true, 2)
+
+            $('.btn_increase').on('click', function (e) {
+                e.preventDefault()                
+
+                var id = $(this).data('id')
+                var qte = $("#qte_"+id).text()
+                
+                if (qte >= 1) {
+                    $("#qte_"+id).text(parseInt(qte) + 1) 
+                     update_cart(id, 1)
+                }
+                
+            })
+
+            $('.btn_decrease').on('click', function (e) {
+                e.preventDefault()
+
+                var id = $(this).data('id')
+                var qte = $("#qte_"+id).text()
+                
+                if (qte == 1) {
+                    delete_product(id, $(this))
+                } else {
+                    
+                    $("#qte_"+id).text(parseInt(qte) - 1) 
+                    update_cart(id, -1)                    
+                }
+            })
+
+            $('.btn_delete_to_cart').on("click", function(e){
+                e.preventDefault()  
+               
+                var id = $(this).data('id')
+                var qte = $("#qte_"+id).text()                
+                
+                delete_product(id, $(this))
+            })
+
+            function delete_product(id, elmt) {
+                var bol = confirm("Voulez-vous vraiment ce produit de votre panier ?")
+                if (bol == true) {
+                    var qte = $("#qte_"+id).text()
+                    $.ajax({
+                        type:"POST",
+                        url: "cart/"+id+"/delete",
+                        beforeSend: function(){
+                            $(".btn_delete_to_cart").prop('disabled',true)
+                        },
+                        success: function(e){
+                            var n = e.search(':')
+                            if ( n >= 0){
+                            var tab = e.split(":", 2)
+                            if (tab.length == 2 ) {
+                                    var elt1 = parseInt($.trim(tab[0])) - 1
+                                    var elt2 = parseInt($.trim(tab[1]))
+
+                                    var price_row = $("#price_total_"+id).text().replace(',', '')
+                                    var price_total = $("#total_cart").text().replace(',', '')
+                                    var price_total_after = price_total - price_row
+                                
+                                    if (elt1 == elt2){
+                                        if (price_total_after > 0) {
+                                            var lenght_cart =  $("#count_product")
+                                            $(elmt).parents("tr").remove()
+
+                                            $("#total_cart").text($.number(price_total_after, 2 , ".",","))
+                                            lenght_cart.text( $.number(lenght_cart.text().replace(' ', '').replace(",", ".") - qte, 2 , ".",","))
+                                        } else { location.reload()}
+                                        
+                                    }
+                            }
+                            
+                            }
+                        }, error: function(error) {console.error(error)}
+                        , complete: function(){ $(".btn_delete_to_cart").prop('disabled',false)}
+                    })
+                }
+                
+            }
+
+            function update_cart(id, qte){
+                $.ajax({
+                    url: "/cart/"+id+"/update",
+                    data: {qte: qte},
+                    beforeSend: function(){$(".btn_decrease, .btn_increase").prop('disabled', true)},
+                    success: function(data) {
+                        update_calcul_total(id , qte)
+                    }, 
+                    error : function(error){console.error(error)},
+                    complete: function(){$(".btn_decrease, .btn_increase").prop('disabled', false)}
+                })
+            }
+
+
+            function update_calcul_total(id , qte)
+            {
+                var qte_unit_row = parseInt($("#qte_"+id).text())
+                var price_unit_row = $("#price_unit_"+id).text().replace(',', '')
+                var price_total_row = $("#price_total_"+id).text().replace(',', '')
+
+                var price_total_cart = $("#total_cart").text().replace(',', '')
+                var qte_total = $("#count_product").text().replace(',', '')
+
+                var price_total_row_after = qte_unit_row * price_unit_row
+                var price_total_cart_after = parseFloat(price_total_cart) + (price_unit_row * qte)
+
+                 $("#count_product").text( $.number(parseInt(qte_total) + qte, 2 , ".",","))
+                 $("#price_total_"+id).text($.number( price_total_row_after, 2 , ".",","))
+                 $("#total_cart").text($.number(price_total_cart_after, 2 , ".",","))
+            }
+        })
+    </script>
+
+{% endblock %}

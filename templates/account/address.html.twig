@@ -1,0 +1,103 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes adresses - {% endblock %}
+
+{% block content %}
+
+<div class="row mb-3">
+    <div class="col-md"><h1>Mes adresses</h1> </div>
+    <div class="col-md"><button class="btn btn-primary float-right" data-toggle="modal" data-target="#addAddress"> <i class="fa fa-plus"></i> Ajouter une adresse</button></div>
+</div>
+
+
+Bienvenue <b>{{ app.user.firstname ~' '~ app.user.lastname }}</b> dans votre compte. C'est dans cet espace que vous allez pouvoir gérer toutes vos adresses.
+<a href="{{ path('account') }}" class="nounderline"> Retour</a>
+<hr>
+{% set addresses = app.user.addresses %}
+{% if addresses|length == 0 %}
+<p class="text-center text-bold">
+    Vous n avez pas encore ajouté une adresse dans votre compte client. Pour ajouter <a href="#" class="nounderline" data-toggle="modal" data-target="#addAddress">cliquez ici</a> 
+</p>
+{% else %}
+<div class="row">
+    {% for address in addresses %}
+        <div class="col-md-4 mb-3 row_{{ address.id }}">
+            <div class="card" style="width: 18rem;">
+                <img class="card-img-top" src="{{ asset('img/location2.png') }}" alt="Card image cap">
+                <div class="card-body">
+                    <h5 class="card-title">{{ address.name }}</h5>
+                    <p class="card-text">
+                        {{ address.address }}, <br>
+                        {{ address.postal }} - {{ address.city }} <br>
+                        {{ address.country }}
+                    </p>
+                    <button class="btn btn-warning btn_edit_address" data-id="{{ address.id }}"><i class="fa fa-edit"></i> Edition</button>&nbsp;&nbsp; 
+                    <button class="btn btn-danger btn_delete_address " data-id="{{ address.id }}"><i class="fa fa-trash"></i> Suppression</button>
+                </div>
+            </div>
+        </div>
+    {% endfor %}    
+</div>
+   
+{% endif %}
+<br><br><br>
+<div class="modal fade" id="addAddress" tabindex="-1" role="dialog" aria-labelledby="addAddressTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content" id="address_body">
+      <h2 class="text-center">Affichage du  formulaire en cours...</h2> 
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+
+    <script>
+        $(document).ready(function(){
+
+            $.urlParam = function(name){
+                var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+                if (results==null){
+                return null;
+                }
+                else{
+                return decodeURI(results[1]) || 0;
+                }
+            }
+
+            
+
+            $('#addAddress').on('shown.bs.modal', function (e) {
+                $.ajax({
+                    url: "{{ path('account_address_add') }}",
+                    beforeSend:function(){},
+                    success: function(data) {
+                        $("#address_body").html(data)
+                    },
+                    error: function(error){console.error(error)}
+                })
+            })
+
+            $('#addAddress').on('hidden.bs.modal', function (e) {
+                //alert("Merci bcp pour avoir utilser cette nouvelle foctionnalité")
+            })
+
+            $(".btn_delete_address").on('click', function(e){
+                e.preventDefault()
+                var bol = confirm("Voulez-vous vraiment supprimer cette adresse ?")
+                if (bol) {
+                    var id = $(this).data('id')
+                    $.ajax({
+                        url: "/mon-compte/address/"+id+"/delete",
+                        success: function(data) {
+                            $("div").remove(".row_"+id)
+                        }
+                    })
+                }
+            })
+
+            if ($.urlParam('modal') ){$("#addAddress").modal('show')}
+        })
+    </script>
+
+{% endblock %}
